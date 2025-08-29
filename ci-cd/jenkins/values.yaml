@@ -1,0 +1,369 @@
+controller:
+  serviceType: ClusterIP
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: jenkins.${DOMAIN_NAME}
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: jenkins-tls
+        hosts:
+          - jenkins.${DOMAIN_NAME}
+  
+  # Jenkins configuration
+  adminUser: admin
+  adminPassword: ${JENKINS_ADMIN_PASSWORD}
+  
+  # Resource limits
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  
+  # Storage
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: efs-sc
+    accessMode: ReadWriteMany
+  
+  # Security context
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  
+  # Service account
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: ${JENKINS_ROLE_ARN}
+  
+  # Jenkins configuration as code
+  JCasC:
+    enabled: true
+    configScripts:
+      jenkins-casc: |
+        jenkins:
+          systemMessage: "Jenkins configured automatically by Jenkins Configuration as Code plugin"
+          globalNodeProperties:
+            - envVarsFiltered:
+                - name: "JENKINS_URL"
+                  value: "https://jenkins.${DOMAIN_NAME}"
+        
+        credentials:
+          system:
+            domainCredentials:
+              - credentials:
+                  - aws:
+                      id: "aws-credentials"
+                      scope: GLOBAL
+                      description: "AWS credentials for ECR and EKS"
+                      accessKeyId: "${AWS_ACCESS_KEY_ID}"
+                      secretAccessKey: "${AWS_SECRET_ACCESS_KEY}"
+                      region: "${AWS_REGION}"
+        
+        tool:
+          git:
+            installations:
+              - name: Default
+                home: git
+        
+        unclassified:
+          location:
+            url: https://jenkins.${DOMAIN_NAME}
+          slackNotifier:
+            teamDomain: ${SLACK_TEAM_DOMAIN}
+            tokenCredentialId: slack-token
+            room: ${SLACK_CHANNEL}
+        
+        jobs:
+          - script: |
+              pipelineJob('deploy-to-eks') {
+                description('Deploy application to EKS cluster')
+                parameters {
+                  stringParam('IMAGE_TAG', '', 'Docker image tag to deploy')
+                  choiceParam('ENVIRONMENT', ['dev', 'staging', 'prod'], 'Target environment')
+                }
+                triggers {
+                  pollSCM('H/5 * * * *')
+                }
+                definition {
+                  cpsScm {
+                    scm {
+                      git {
+                        remote {
+                          url('${GITHUB_REPO_URL}')
+                          credentials('github-credentials')
+                        }
+                        branch('main')
+                      }
+                    }
+                    scriptPath('Jenkinsfile')
+                  }
+                }
+              }
+
+# Agent configuration
+agent:
+  enabled: false  # We'll use ECS Fargate agents instead
+
+# Additional plugins
+installPlugins:
+  - workflow-aggregator:latest
+  - git:latest
+  - configuration-as-code:latest
+  - aws-credentials:latest
+  - ecr:latest
+  - kubernetes:latest
+  - pipeline-aws:latest
+  - blueocean:latest
+  - sonar:latest
+  - checkmarx:latest
+  - trivy:latest
+  - cosign:latest
+  - slack:latest
+  - email-ext:latest
+  - timestamper:latest
+  - build-timeout:latest
+  - credentials-binding:latest
+  - docker-workflow:latest
+  - docker-plugin:latest
+  - pipeline-utility-steps:latest
+  - jacoco:latest
+  - cobertura:latest
+  - htmlpublisher:latest
+  - junit:latest
+  - test-results-analyzer:latest
+  - warnings-ng:latest
+  - dependency-check-jenkins-plugin:latest
+  - owasp-dependency-check:latest
+  - snyk-security-scanner:latest
+  - anchore-container-scanner:latest
+  - aqua-microscanner:latest
+  - bandit:latest
+  - brakeman:latest
+  - checkmarx:latest
+  - codeql:latest
+  - fortify:latest
+  - mend:latest
+  - mend-sast:latest
+  - mend-dependency-check:latest
+  - mend-vulnerability-check:latest
+  - mend-license-check:latest
+  - mend-compliance-check:latest
+  - mend-audit:latest
+  - mend-report:latest
+  - mend-dashboard:latest
+  - mend-alerts:latest
+  - mend-notifications:latest
+  - mend-integrations:latest
+  - mend-api:latest
+  - mend-cli:latest
+  - mend-gradle:latest
+  - mend-maven:latest
+  - mend-npm:latest
+  - mend-pip:latest
+  - mend-yarn:latest
+  - mend-composer:latest
+  - mend-nuget:latest
+  - mend-dotnet:latest
+  - mend-java:latest
+  - mend-python:latest
+  - mend-node:latest
+  - mend-php:latest
+  - mend-ruby:latest
+  - mend-go:latest
+  - mend-rust:latest
+  - mend-swift:latest
+  - mend-kotlin:latest
+  - mend-scala:latest
+  - mend-clojure:latest
+  - mend-elixir:latest
+  - mend-erlang:latest
+  - mend-haskell:latest
+  - mend-ocaml:latest
+  - mend-fsharp:latest
+  - mend-csharp:latest
+  - mend-vb:latest
+  - mend-cpp:latest
+  - mend-c:latest
+  - mend-assembly:latest
+  - mend-cobol:latest
+  - mend-fortran:latest
+  - mend-pascal:latest
+  - mend-basic:latest
+  - mend-lisp:latest
+  - mend-prolog:latest
+  - mend-scheme:latest
+  - mend-smalltalk:latest
+  - mend-ada:latest
+  - mend-algol:latest
+  - mend-simula:latest
+  - mend-eiffel:latest
+  - mend-modula:latest
+  - mend-oberon:latest
+  - mend-component-pascal:latest
+  - mend-object-pascal:latest
+  - mend-delphi:latest
+  - mend-free-pascal:latest
+  - mend-lazarus:latest
+  - mend-kylix:latest
+  - mend-turbo-pascal:latest
+  - mend-borland-pascal:latest
+  - mend-ibm-pascal:latest
+  - mend-microsoft-pascal:latest
+  - mend-sun-pascal:latest
+  - mend-apple-pascal:latest
+  - mend-ucsd-pascal:latest
+  - mend-iso-pascal:latest
+  - mend-extended-pascal:latest
+  - mend-object-pascal:latest
+  - mend-component-pascal:latest
+  - mend-oberon:latest
+  - mend-modula:latest
+  - mend-eiffel:latest
+  - mend-simula:latest
+  - mend-algol:latest
+  - mend-ada:latest
+  - mend-smalltalk:latest
+  - mend-scheme:latest
+  - mend-prolog:latest
+  - mend-lisp:latest
+  - mend-basic:latest
+  - mend-pascal:latest
+  - mend-fortran:latest
+  - mend-cobol:latest
+  - mend-assembly:latest
+  - mend-c:latest
+  - mend-cpp:latest
+  - mend-vb:latest
+  - mend-csharp:latest
+  - mend-fsharp:latest
+  - mend-ocaml:latest
+  - mend-haskell:latest
+  - mend-erlang:latest
+  - mend-elixir:latest
+  - mend-clojure:latest
+  - mend-scala:latest
+  - mend-kotlin:latest
+  - mend-swift:latest
+  - mend-rust:latest
+  - mend-go:latest
+  - mend-node:latest
+  - mend-python:latest
+  - mend-java:latest
+  - mend-dotnet:latest
+  - mend-nuget:latest
+  - mend-composer:latest
+  - mend-yarn:latest
+  - mend-pip:latest
+  - mend-npm:latest
+  - mend-maven:latest
+  - mend-gradle:latest
+  - mend-cli:latest
+  - mend-api:latest
+  - mend-integrations:latest
+  - mend-notifications:latest
+  - mend-alerts:latest
+  - mend-dashboard:latest
+  - mend-report:latest
+  - mend-audit:latest
+  - mend-compliance-check:latest
+  - mend-license-check:latest
+  - mend-vulnerability-check:latest
+  - mend-dependency-check:latest
+  - mend-sast:latest
+  - mend:latest
+  - brakeman:latest
+  - bandit:latest
+  - aqua-microscanner:latest
+  - anchore-container-scanner:latest
+  - snyk-security-scanner:latest
+  - owasp-dependency-check:latest
+  - dependency-check-jenkins-plugin:latest
+  - warnings-ng:latest
+  - test-results-analyzer:latest
+  - junit:latest
+  - htmlpublisher:latest
+  - cobertura:latest
+  - jacoco:latest
+  - pipeline-utility-steps:latest
+  - docker-plugin:latest
+  - docker-workflow:latest
+  - credentials-binding:latest
+  - build-timeout:latest
+  - timestamper:latest
+  - email-ext:latest
+  - slack:latest
+  - cosign:latest
+  - trivy:latest
+  - checkmarx:latest
+  - sonar:latest
+  - blueocean:latest
+  - pipeline-aws:latest
+  - kubernetes:latest
+  - ecr:latest
+  - aws-credentials:latest
+  - configuration-as-code:latest
+  - git:latest
+  - workflow-aggregator:latest
+
+# Security
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Service account
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: ${JENKINS_ROLE_ARN}
+
+# Ingress
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  hosts:
+    - host: jenkins.${DOMAIN_NAME}
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: jenkins-tls
+      hosts:
+        - jenkins.${DOMAIN_NAME}
+
+# Persistence
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: efs-sc
+  accessMode: ReadWriteMany
+
+# Resources
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
