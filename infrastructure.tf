@@ -130,12 +130,12 @@ module "cloudfront" {
 
 
 
-# WAF for public dashboards
+# WAF for public dashboards (must be in us-east-1 for CloudFront)
 resource "aws_wafv2_web_acl" "public_dashboards" {
+  provider    = aws.us-east-1
   name        = "${local.project_name}-public-dashboards-waf"
   description = "WAF for public dashboards"
   scope       = "CLOUDFRONT"
-  provider    = aws.us-east-1
 
   default_action {
     allow {}
@@ -181,4 +181,25 @@ variable "allowed_ssh_cidrs" {
   description = "List of CIDR blocks allowed SSH access to bastion"
   type        = list(string)
   default     = ["0.0.0.0/0"]
+}
+
+# Outputs for other modules to consume
+output "cluster_name" {
+  description = "EKS cluster name"
+  value       = module.eks.cluster_id
+}
+
+output "cluster_endpoint" {
+  description = "EKS cluster endpoint"
+  value       = module.eks.cluster_endpoint
+}
+
+output "cluster_certificate_authority_data" {
+  description = "EKS cluster certificate authority data"
+  value       = module.eks.cluster_certificate_authority_data
+}
+
+output "oidc_provider_arn" {
+  description = "EKS OIDC provider ARN"
+  value       = module.eks.oidc_provider_arn
 }
