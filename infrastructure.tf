@@ -108,12 +108,11 @@ resource "aws_acm_certificate" "alb" {
 module "alb" {
   source = "./modules/alb"
   
-  name             = local.project_name
-  vpc_id           = module.vpc.vpc_id
-  subnet_ids       = module.vpc.public_subnet_ids
-  target_group_arns = [module.eks.cluster_arn] # Placeholder
-  certificate_arn  = aws_acm_certificate.alb.arn
-  tags             = local.common_tags
+  name            = local.project_name
+  vpc_id          = module.vpc.vpc_id
+  subnet_ids      = module.vpc.public_subnet_ids
+  certificate_arn = aws_acm_certificate.alb.arn
+  tags            = local.common_tags
 }
 
 # CloudFront Module

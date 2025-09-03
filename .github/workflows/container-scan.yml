@@ -14,19 +14,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker image
+      - name: Check for Dockerfiles
+        id: check-dockerfiles
         run: |
-          docker build -t test-image:latest .
+          if find . -name "Dockerfile*" -type f | grep -q .; then
+            echo "dockerfiles-found=true" >> $GITHUB_OUTPUT
+            echo "Found Dockerfiles, proceeding with container scan"
+          else
+            echo "dockerfiles-found=false" >> $GITHUB_OUTPUT
+            echo "No Dockerfiles found, skipping container scan"
+          fi
+
+      - name: Build Docker images
+        if: steps.check-dockerfiles.outputs.dockerfiles-found == 'true'
+        run: |
+          # Build all Dockerfiles found
+          for dockerfile in $(find . -name "Dockerfile*" -type f); do
+            dir=$(dirname "$dockerfile")
+            name=$(basename "$dir")
+            echo "Building $dockerfile in $dir"
+            docker build -t "test-image-$name:latest" -f "$dockerfile" "$dir"
+          done
 
       - name: Scan with Trivy
+        if: steps.check-dockerfiles.outputs.dockerfiles-found == 'true'
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: 'test-image:latest'
+          image-ref: 'test-image-*:latest'
           format: 'sarif'
           output: 'container-scan-results.sarif'
 
       - name: Upload container scan results
+        if: steps.check-dockerfiles.outputs.dockerfiles-found == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: container-scan-results
           path: container-scan-results.sarif
+
+      - name: Skip message
+        if: steps.check-dockerfiles.outputs.dockerfiles-found == 'false'
+        run: |
+          echo "✅ No Dockerfiles found in repository"
+          echo "Container scan skipped - this is normal for infrastructure repositories"
