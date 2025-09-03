@@ -17,8 +17,9 @@ controller:
           - jenkins.${DOMAIN_NAME}
   
   # Jenkins configuration
-  adminUser: admin
-  adminPassword: ${JENKINS_ADMIN_PASSWORD}
+  admin:
+    username: admin
+    password: ${JENKINS_ADMIN_PASSWORD}
   
   # Resource limits
   resources:
