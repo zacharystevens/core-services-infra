@@ -43,11 +43,8 @@ module "eks" {
 module "ecs" {
   source = "./modules/ecs"
   
-  cluster_name           = "${local.project_name}-jenkins-agents"
-  vpc_id                 = module.vpc.vpc_id
-  subnet_ids             = module.vpc.private_subnet_ids
-  task_execution_role_arn = module.security.jenkins_role_arn
-  tags                   = local.common_tags
+  cluster_name = "${local.project_name}-jenkins-agents"
+  tags         = local.common_tags
 }
 
 # ECR Module
