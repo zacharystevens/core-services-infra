@@ -15,12 +15,12 @@ controller:
       - secretName: jenkins-tls
         hosts:
           - jenkins.${DOMAIN_NAME}
-  
+
   # Jenkins configuration
   admin:
     username: admin
     password: ${JENKINS_ADMIN_PASSWORD}
-  
+
   # Resource limits
   resources:
     requests:
@@ -29,26 +29,26 @@ controller:
     limits:
       memory: "2Gi"
       cpu: "1000m"
-  
+
   # Storage
   persistence:
     enabled: true
     size: 10Gi
     storageClass: efs-sc
     accessMode: ReadWriteMany
-  
+
   # Security context
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
     fsGroup: 1000
-  
+
   # Service account
   serviceAccount:
     create: true
     annotations:
       eks.amazonaws.com/role-arn: ${JENKINS_ROLE_ARN}
-  
+
   # Jenkins configuration as code
   JCasC:
     enabled: true
@@ -60,7 +60,7 @@ controller:
             - envVarsFiltered:
                 - name: "JENKINS_URL"
                   value: "https://jenkins.${DOMAIN_NAME}"
-        
+
         credentials:
           system:
             domainCredentials:
@@ -72,13 +72,13 @@ controller:
                       accessKeyId: "${AWS_ACCESS_KEY_ID}"
                       secretAccessKey: "${AWS_SECRET_ACCESS_KEY}"
                       region: "${AWS_REGION}"
-        
+
         tool:
           git:
             installations:
               - name: Default
                 home: git
-        
+
         unclassified:
           location:
             url: https://jenkins.${DOMAIN_NAME}
@@ -86,7 +86,7 @@ controller:
             teamDomain: ${SLACK_TEAM_DOMAIN}
             tokenCredentialId: slack-token
             room: ${SLACK_CHANNEL}
-        
+
         jobs:
           - script: |
               pipelineJob('deploy-to-eks') {

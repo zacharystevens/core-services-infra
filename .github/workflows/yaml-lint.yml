@@ -2,45 +2,45 @@ name: YAML Lint
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   yaml-lint:
     name: YAML Lint
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        
-    - name: Install yamllint
-      run: |
-        python -m pip install --upgrade pip
-        pip install yamllint
-        
-    - name: Create .yamllint config if missing
-      run: |
-        if [ ! -f .yamllint ]; then
-          cat > .yamllint << EOF
-        extends: default
-        rules:
-          line-length:
-            max: 120
-          document-start: disable
-          trailing-spaces: enable
-          indentation:
-            spaces: 2
-            indent-sequences: true
-        EOF
-        fi
-        
-    - name: YAML Lint
-      run: |
-        yamllint -c .yamllint .
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install yamllint
+        run: |
+          python -m pip install --upgrade pip
+          pip install yamllint
+
+      - name: Create .yamllint config if missing
+        run: |
+          if [ ! -f .yamllint ]; then
+            cat > .yamllint << EOF
+          extends: default
+          rules:
+            line-length:
+              max: 120
+            document-start: disable
+            trailing-spaces: enable
+            indentation:
+              spaces: 2
+              indent-sequences: true
+          EOF
+          fi
+
+      - name: YAML Lint
+        run: |
+          yamllint -c .yamllint .

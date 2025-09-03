@@ -2,31 +2,31 @@ name: Container Scan
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   container-scan:
     name: Container Scan
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Build Docker image
-      run: |
-        docker build -t test-image:latest .
-        
-    - name: Scan with Trivy
-      uses: aquasecurity/trivy-action@v0.25.0
-      with:
-        image-ref: 'test-image:latest'
-        format: 'sarif'
-        output: 'container-scan-results.sarif'
-        
-    - name: Upload container scan results
-      uses: actions/upload-artifact@v4
-      with:
-        name: container-scan-results
-        path: container-scan-results.sarif
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t test-image:latest .
+
+      - name: Scan with Trivy
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: 'test-image:latest'
+          format: 'sarif'
+          output: 'container-scan-results.sarif'
+
+      - name: Upload container scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-scan-results
+          path: container-scan-results.sarif
