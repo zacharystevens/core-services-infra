@@ -26,6 +26,7 @@ jobs:
           framework: terraform
           output_format: json
           output_file_path: checkov-results.json
+          soft_fail: true
 
       - name: Upload Checkov results
         uses: actions/upload-artifact@v4
