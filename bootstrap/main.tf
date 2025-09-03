@@ -74,6 +74,16 @@ resource "aws_dynamodb_table" "terraform_locks" {
     type = "S"
   }
 
+  # Enable point-in-time recovery
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  # Enable server-side encryption with KMS
+  server_side_encryption {
+    enabled = true
+  }
+
   tags = {
     Name = "terraform-locks"
   }

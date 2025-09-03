@@ -97,6 +97,10 @@ resource "aws_acm_certificate" "alb" {
   private_key      = tls_private_key.alb.private_key_pem
   certificate_body = tls_self_signed_cert.alb.cert_pem
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tags = local.common_tags
 }
 
@@ -158,6 +162,28 @@ resource "aws_wafv2_web_acl" "public_dashboards" {
     }
   }
 
+  rule {
+    name     = "Log4jProtection"
+    priority = 2
+
+    action {
+      block {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "Log4jProtectionRule"
+      sampled_requests_enabled   = true
+    }
+  }
+
   visibility_config {
     cloudwatch_metrics_enabled = true
     metric_name                = "PublicDashboardsWAFMetric"
@@ -175,7 +201,7 @@ resource "aws_wafv2_web_acl" "public_dashboards" {
 variable "allowed_ssh_cidrs" {
   description = "List of CIDR blocks allowed SSH access to bastion"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]  # Private networks only
 }
 
 # Outputs for other modules to consume
