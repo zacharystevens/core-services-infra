@@ -13,11 +13,7 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "target_group_arns" {
-  description = "List of target group ARNs"
-  type        = list(string)
-  default     = []
-}
+
 
 variable "certificate_arn" {
   description = "SSL certificate ARN for HTTPS listener"
