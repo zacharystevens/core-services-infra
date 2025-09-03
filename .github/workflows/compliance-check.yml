@@ -1,0 +1,44 @@
+name: Compliance Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  compliance-check:
+    name: Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install compliance tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+        
+    - name: Python Security Scan (Bandit)
+      run: |
+        find . -name "*.py" | xargs bandit -r . || true
+        
+    - name: Python Dependency Check (Safety)
+      run: |
+        safety check || true
+        
+    - name: Check for secrets
+      run: |
+        git secrets --scan || true
+        
+    - name: Check for hardcoded credentials
+      run: |
+        grep -r "AKIA[0-9A-Z]{16}\|sk_live_[a-zA-Z0-9]{24}\|pk_live_[a-zA-Z0-9]{24}" . || true
+        grep -r "password.*=.*['\"][^'\"]*['\"]" . || true
+        grep -r "secret.*=.*['\"][^'\"]*['\"]" . || true

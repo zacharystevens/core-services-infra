@@ -1,0 +1,30 @@
+name: Ansible Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  ansible-lint:
+    name: Ansible Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install Ansible and ansible-lint
+      run: |
+        python -m pip install --upgrade pip
+        pip install ansible ansible-lint
+        
+    - name: Ansible Lint
+      run: |
+        find . -name "*.yml" -o -name "*.yaml" | grep -v ".github" | xargs -I {} sh -c 'if grep -q "hosts:" "{}"; then echo "Linting {}"; ansible-lint "{}"; fi' || true

@@ -1,0 +1,48 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CHECKOV_VERSION: "2.3.0"
+  TRIVY_VERSION: "0.42.1"
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Checkov
+      uses: bridgecrewio/checkov-action@v12
+      with:
+        directory: .
+        framework: terraform
+        output_format: json
+        output_file_path: checkov-results.json
+        
+    - name: Upload Checkov results
+      uses: actions/upload-artifact@v4
+      with:
+        name: checkov-results
+        path: checkov-results.json
+        
+    - name: Setup Trivy
+      uses: aquasecurity/trivy-action@v0.25.0
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy results
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-results
+        path: trivy-results.sarif
