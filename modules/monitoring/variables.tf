@@ -13,10 +13,7 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "environment" {
-  description = "Environment name"
-  type        = string
-}
+
 
 variable "allowed_security_group_ids" {
   description = "List of security group IDs allowed to access OpenSearch"

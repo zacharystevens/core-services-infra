@@ -65,7 +65,6 @@ module "monitoring" {
   name        = local.project_name
   vpc_id      = module.vpc.vpc_id
   subnet_ids  = module.vpc.data_subnet_ids
-  environment = local.environment
   allowed_security_group_ids = [module.vpc.security_group_ids.eks, module.vpc.security_group_ids.ecs]
   tags        = local.common_tags
 }
